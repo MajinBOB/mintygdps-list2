@@ -1,0 +1,195 @@
+// Database schema for Geometry Dash Demonlist
+// References: javascript_database and javascript_log_in_with_replit blueprints
+
+import { sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  jsonb,
+  index,
+  boolean,
+} from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// ============================================================================
+// SESSION AND USER TABLES (Required for Replit Auth)
+// ============================================================================
+
+// Session storage table - Required for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table - Username/password based authentication
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username").unique().notNull(),
+  passwordHash: varchar("password_hash").notNull(),
+  profileImageUrl: varchar("profile_image_url"),
+  country: varchar("country"),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  isModerator: boolean("is_moderator").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+
+// ============================================================================
+// DEMONLIST TABLES
+// ============================================================================
+
+// Demons table - stores demon levels
+export const demons = pgTable("demons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  creator: text("creator").notNull(),
+  verifier: text("verifier"),
+  verifierId: varchar("verifier_id").references(() => users.id, { onDelete: "set null" }), // Track which user verified it
+  difficulty: varchar("difficulty", { length: 50 }).notNull(), // Easy, Medium, Hard, Insane, Extreme
+  position: integer("position").notNull().unique(),
+  points: integer("points").notNull(),
+  videoUrl: text("video_url"),
+  completionCount: integer("completion_count").notNull().default(0),
+  listType: varchar("list_type", { length: 50 }).notNull().default("demonlist"), // demonlist, challenge, unrated, upcoming
+  enjoymentRating: integer("enjoyment_rating"),
+  categories: text("categories").array().default(sql`ARRAY[]::text[]`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDemonSchema = createInsertSchema(demons).omit({
+  id: true,
+  completionCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  difficulty: z.enum(["Easy", "Medium", "Hard", "Insane", "Extreme"]),
+  position: z.number().int().positive(),
+  points: z.number().int().positive(),
+  listType: z.enum(["demonlist", "challenge", "unrated", "upcoming", "platformer"]).default("demonlist"),
+  enjoymentRating: z.number().int().min(1).max(5).optional(),
+  categories: z.array(z.string()).optional().default([]),
+});
+
+export type InsertDemon = z.infer<typeof insertDemonSchema>;
+export type Demon = typeof demons.$inferSelect;
+
+// Records/Submissions table - stores player completion submissions
+export const records = pgTable("records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  demonId: varchar("demon_id").notNull().references(() => demons.id, { onDelete: "cascade" }),
+  videoUrl: text("video_url").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, approved, rejected
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+});
+
+export const insertRecordSchema = createInsertSchema(records).omit({
+  id: true,
+  userId: true,
+  status: true,
+  submittedAt: true,
+  reviewedAt: true,
+  reviewedBy: true,
+}).extend({
+  videoUrl: z.string().url("Must be a valid URL"),
+});
+
+export type InsertRecord = z.infer<typeof insertRecordSchema>;
+export type Record = typeof records.$inferSelect;
+
+// ============================================================================
+// PACKS TABLES
+// ============================================================================
+
+// Packs table - stores challenge packs
+export const packs = pgTable("packs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  points: integer("points").notNull(),
+  listType: varchar("list_type", { length: 50 }).notNull(), // demonlist, challenge, unrated, upcoming, platformer
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPackSchema = createInsertSchema(packs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Pack name required"),
+  points: z.number().int().positive("Points must be positive"),
+  listType: z.enum(["demonlist", "challenge", "unrated", "upcoming", "platformer"]),
+});
+
+export type InsertPack = z.infer<typeof insertPackSchema>;
+export type Pack = typeof packs.$inferSelect;
+
+// Pack levels junction table
+export const packLevels = pgTable("pack_levels", {
+  packId: varchar("pack_id").notNull().references(() => packs.id, { onDelete: "cascade" }),
+  demonId: varchar("demon_id").notNull().references(() => demons.id, { onDelete: "cascade" }),
+}, (table) => [
+  index("IDX_pack_levels_pack").on(table.packId),
+  index("IDX_pack_levels_demon").on(table.demonId),
+]);
+
+export type PackLevel = typeof packLevels.$inferSelect;
+
+// ============================================================================
+// RELATIONS
+// ============================================================================
+
+export const usersRelations = relations(users, ({ many }) => ({
+  records: many(records),
+}));
+
+export const demonsRelations = relations(demons, ({ many }) => ({
+  records: many(records),
+  packLevels: many(packLevels),
+}));
+
+export const recordsRelations = relations(records, ({ one }) => ({
+  user: one(users, {
+    fields: [records.userId],
+    references: [users.id],
+  }),
+  demon: one(demons, {
+    fields: [records.demonId],
+    references: [demons.id],
+  }),
+  reviewer: one(users, {
+    fields: [records.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export const packsRelations = relations(packs, ({ many }) => ({
+  levels: many(packLevels),
+}));
+
+export const packLevelsRelations = relations(packLevels, ({ one }) => ({
+  pack: one(packs, {
+    fields: [packLevels.packId],
+    references: [packs.id],
+  }),
+  demon: one(demons, {
+    fields: [packLevels.demonId],
+    references: [demons.id],
+  }),
+}));
