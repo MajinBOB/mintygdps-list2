@@ -12,6 +12,11 @@ export default function Profile() {
   
   const { data: records, isLoading: recordsLoading } = useQuery<any[]>({
     queryKey: ["/api/records", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/records/${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch records");
+      return response.json();
+    },
     enabled: !!user?.id,
   });
 
