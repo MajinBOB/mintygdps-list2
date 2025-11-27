@@ -284,7 +284,7 @@ export class DatabaseStorage implements IStorage {
       .from(records)
       .leftJoin(demons, eq(records.demonId, demons.id))
       .where(eq(records.userId, userId))
-      .orderBy(desc(records.submittedAt));
+      .orderBy(desc(demons.points));
   }
 
   async getVerifiedLevelsByUser(userId: string): Promise<any[]> {
@@ -528,7 +528,8 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(demons, eq(records.demonId, demons.id))
       .where(listType
         ? and(eq(records.userId, userId), eq(records.status, "approved"), eq(demons.listType, listType))
-        : and(eq(records.userId, userId), eq(records.status, "approved")));
+        : and(eq(records.userId, userId), eq(records.status, "approved")))
+      .orderBy(desc(demons.points));
 
     // Get verified levels
     const verifiedDemons = await db
@@ -536,7 +537,8 @@ export class DatabaseStorage implements IStorage {
       .from(demons)
       .where(listType
         ? and(eq(demons.verifierId, userId), eq(demons.listType, listType))
-        : eq(demons.verifierId, userId));
+        : eq(demons.verifierId, userId))
+      .orderBy(desc(demons.points));
 
     // Calculate points
     const completionPoints = completedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0);
