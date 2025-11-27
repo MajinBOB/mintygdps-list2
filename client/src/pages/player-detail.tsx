@@ -27,12 +27,19 @@ type PlayerDetail = {
 
 export default function PlayerDetail() {
   const { userId } = useParams<{ userId: string }>();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  
+  // Extract listType from query string
+  const searchParams = new URLSearchParams(location.split('?')[1]);
+  const listType = searchParams.get('listType') || undefined;
 
   const { data: player, isLoading } = useQuery<PlayerDetail>({
-    queryKey: [`/api/players/${userId}`],
+    queryKey: [`/api/players/${userId}`, listType],
     queryFn: async () => {
-      const response = await fetch(`/api/players/${userId}`);
+      const url = listType 
+        ? `/api/players/${userId}?listType=${listType}`
+        : `/api/players/${userId}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch player details");
       return response.json();
     },
@@ -81,7 +88,7 @@ export default function PlayerDetail() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setLocation("/leaderboard")}
+                onClick={() => setLocation(listType ? `/leaderboard/${listType}` : "/leaderboard")}
                 data-testid="button-back"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />

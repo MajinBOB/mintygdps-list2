@@ -87,7 +87,7 @@ export default function LeaderboardList() {
                 </p>
               </div>
             ) : (
-              <LeaderboardTable entries={filteredLeaderboard} />
+              <LeaderboardTable entries={filteredLeaderboard} listType={listType} />
             )}
           </div>
         </div>

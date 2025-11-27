@@ -131,6 +131,8 @@ export default function Leaderboard() {
                       className="flex items-center gap-4 p-4 rounded-lg bg-card hover-elevate cursor-pointer"
                       onClick={() => navigate(`/player/${entry.user.id}`)}
                       data-testid={`row-overall-${index}`}
+                      role="button"
+                      tabIndex={0}
                     >
                       <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center font-display font-bold text-primary">
                         #{entry.rank}

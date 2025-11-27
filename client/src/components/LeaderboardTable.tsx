@@ -14,17 +14,21 @@ type LeaderboardEntry = {
 
 type LeaderboardTableProps = {
   entries: LeaderboardEntry[];
+  listType?: string;
 };
 
-export function LeaderboardTable({ entries }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, listType }: LeaderboardTableProps) {
   return (
     <div className="space-y-2">
       {entries.map((entry, index) => {
         const isTopThree = index < 3;
         const userInitials = getInitials(entry.user);
+        const playerUrl = listType 
+          ? `/player/${entry.user.id}?listType=${listType}`
+          : `/player/${entry.user.id}`;
         
         return (
-          <Link key={entry.user.id} href={`/player/${entry.user.id}`}>
+          <Link key={entry.user.id} href={playerUrl}>
             <a
               className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer ${
                 isTopThree 
