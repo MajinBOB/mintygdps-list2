@@ -134,11 +134,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get player details
+  // Get player details (with optional list type filter)
   app.get("/api/players/:userId", async (req, res) => {
     try {
       const userId = req.params.userId;
-      const playerDetails = await storage.getPlayerDetails(userId);
+      const listType = req.query.listType as string | undefined;
+      const playerDetails = await storage.getPlayerDetails(userId, listType);
       if (!playerDetails) {
         return res.status(404).json({ message: "Player not found" });
       }

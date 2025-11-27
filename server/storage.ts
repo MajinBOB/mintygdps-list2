@@ -504,7 +504,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getPlayerDetails(userId: string): Promise<any> {
+  async getPlayerDetails(userId: string, listType?: string): Promise<any> {
     // Get user
     const user = await this.getUser(userId);
     if (!user) return null;
@@ -526,13 +526,17 @@ export class DatabaseStorage implements IStorage {
       })
       .from(records)
       .leftJoin(demons, eq(records.demonId, demons.id))
-      .where(and(eq(records.userId, userId), eq(records.status, "approved")));
+      .where(listType
+        ? and(eq(records.userId, userId), eq(records.status, "approved"), eq(demons.listType, listType))
+        : and(eq(records.userId, userId), eq(records.status, "approved")));
 
     // Get verified levels
     const verifiedDemons = await db
       .select()
       .from(demons)
-      .where(eq(demons.verifierId, userId));
+      .where(listType
+        ? and(eq(demons.verifierId, userId), eq(demons.listType, listType))
+        : eq(demons.verifierId, userId));
 
     // Calculate points
     const completionPoints = completedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0);
@@ -542,7 +546,7 @@ export class DatabaseStorage implements IStorage {
     let packBonusPoints = 0;
     let completedPacks: any[] = [];
     try {
-      const userPacks = await this.getPacksByUser(userId);
+      const userPacks = await this.getPacksByUser(userId, listType);
       completedPacks = userPacks.filter(p => p.isCompleted);
       packBonusPoints = completedPacks.reduce((sum, pack) => sum + pack.points, 0);
     } catch (error) {
