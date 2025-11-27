@@ -1,14 +1,25 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/initials";
 import type { Record } from "@shared/schema";
 
+const LIST_NAMES: Record<string, string> = {
+  demonlist: "Demonlist",
+  challenge: "Challenge List",
+  unrated: "Unrated List",
+  upcoming: "Upcoming List",
+  platformer: "Platformer List",
+};
+
 export default function Profile() {
   const { user, isLoading: authLoading } = useAuth();
+  const [selectedListType, setSelectedListType] = useState<string>("demonlist");
   
   const { data: records, isLoading: recordsLoading } = useQuery<any[]>({
     queryKey: ["/api/records", user?.id],
@@ -25,6 +36,16 @@ export default function Profile() {
     queryFn: async () => {
       const response = await fetch(`/api/verified-levels/${user?.id}`);
       if (!response.ok) throw new Error("Failed to fetch verified levels");
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: userPacks, isLoading: packsLoading } = useQuery<any[]>({
+    queryKey: ["/api/packs/user", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/packs/user/${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch packs");
       return response.json();
     },
     enabled: !!user?.id,
@@ -55,9 +76,11 @@ export default function Profile() {
   }
 
   const initials = getInitials(user);
-  const approvedRecords = records?.filter(r => r.status === "approved") || [];
-  const allCompletions = approvedRecords.length + (verifiedLevels?.length || 0);
-  const totalCompletionPoints = approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0);
+  const approvedRecords = records?.filter(r => r.status === "approved" && r.demon?.listType === selectedListType) || [];
+  const verifiedInList = verifiedLevels?.filter(l => l.listType === selectedListType) || [];
+  const allCompletions = approvedRecords.length + verifiedInList.length;
+  const totalCompletionPoints = approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0) + verifiedInList.reduce((sum, l) => sum + (l.points || 0), 0);
+  const completedPacks = userPacks?.filter(p => p.isCompleted && p.listType === selectedListType) || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -66,6 +89,22 @@ export default function Profile() {
       <main className="flex-1 py-12">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto space-y-8">
+            {/* List Type Filter */}
+            <div className="flex items-center gap-4 overflow-x-auto pb-2">
+              <span className="text-sm font-medium whitespace-nowrap">Filter by:</span>
+              <div className="flex gap-2">
+                {Object.entries(LIST_NAMES).map(([type, label]) => (
+                  <Button
+                    key={type}
+                    variant={selectedListType === type ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedListType(type)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
             {/* Profile Header */}
             <Card className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
@@ -152,13 +191,13 @@ export default function Profile() {
                     <Skeleton key={i} className="h-20 w-full" />
                   ))}
                 </div>
-              ) : verifiedLevels?.length === 0 ? (
+              ) : verifiedInList.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No verified levels yet.
+                  No verified levels in this list yet.
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {verifiedLevels?.map((level) => (
+                  {verifiedInList?.map((level) => (
                     <div
                       key={level.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
@@ -174,6 +213,45 @@ export default function Profile() {
                       </div>
                       <p className="font-display font-bold text-accent">
                         {level.points} pts
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Completed Packs */}
+            <Card className="p-8">
+              <h2 className="font-display font-bold text-2xl mb-6">Completed Packs</h2>
+              
+              {packsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : completedPacks.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No completed packs in this list yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {completedPacks?.map((pack) => (
+                    <div
+                      key={pack.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                      data-testid={`pack-item-${pack.id}`}
+                    >
+                      <div>
+                        <p className="font-medium" data-testid={`pack-name-${pack.id}`}>
+                          {pack.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {pack.levels?.length || 0} levels
+                        </p>
+                      </div>
+                      <p className="font-display font-bold text-green-600 dark:text-green-400">
+                        +{pack.points} pts
                       </p>
                     </div>
                   ))}

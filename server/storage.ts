@@ -15,7 +15,7 @@ import {
   type InsertPack,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, asc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
