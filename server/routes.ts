@@ -189,6 +189,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's verified levels
+  app.get("/api/verified-levels/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const verifiedLevels = await storage.getVerifiedLevelsByUser(userId);
+      res.json(verifiedLevels);
+    } catch (error) {
+      console.error("Error fetching verified levels:", error);
+      res.status(500).json({ message: "Failed to fetch verified levels" });
+    }
+  });
+
   // Submit a record
   app.post("/api/records", isAuthenticated, async (req: any, res) => {
     try {

@@ -261,12 +261,43 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getRecordsByUser(userId: string): Promise<Record[]> {
+  async getRecordsByUser(userId: string): Promise<any[]> {
     return await db
-      .select()
+      .select({
+        id: records.id,
+        userId: records.userId,
+        demonId: records.demonId,
+        videoUrl: records.videoUrl,
+        status: records.status,
+        submittedAt: records.submittedAt,
+        reviewedAt: records.reviewedAt,
+        reviewedBy: records.reviewedBy,
+        demon: {
+          id: demons.id,
+          name: demons.name,
+          position: demons.position,
+          difficulty: demons.difficulty,
+          points: demons.points,
+        },
+      })
       .from(records)
+      .leftJoin(demons, eq(records.demonId, demons.id))
       .where(eq(records.userId, userId))
       .orderBy(desc(records.submittedAt));
+  }
+
+  async getVerifiedLevelsByUser(userId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: demons.id,
+        name: demons.name,
+        position: demons.position,
+        difficulty: demons.difficulty,
+        points: demons.points,
+      })
+      .from(demons)
+      .where(eq(demons.verifierId, userId))
+      .orderBy(asc(demons.position));
   }
 
   async getApprovedRecordsByDemon(demonId: string): Promise<any[]> {

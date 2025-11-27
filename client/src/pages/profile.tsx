@@ -20,6 +20,16 @@ export default function Profile() {
     enabled: !!user?.id,
   });
 
+  const { data: verifiedLevels, isLoading: verifiedLoading } = useQuery<any[]>({
+    queryKey: ["/api/verified-levels", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/verified-levels/${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch verified levels");
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -46,6 +56,8 @@ export default function Profile() {
 
   const initials = getInitials(user);
   const approvedRecords = records?.filter(r => r.status === "approved") || [];
+  const allCompletions = approvedRecords.length + (verifiedLevels?.length || 0);
+  const totalCompletionPoints = approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -70,13 +82,13 @@ export default function Profile() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="font-display font-bold text-2xl">
-                        {approvedRecords.length}
+                        {allCompletions}
                       </p>
                       <p className="text-sm text-muted-foreground">Completions</p>
                     </div>
                     <div className="text-center">
                       <p className="font-display font-bold text-2xl">
-                        {approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0)}
+                        {totalCompletionPoints}
                       </p>
                       <p className="text-sm text-muted-foreground">Total Points</p>
                     </div>
@@ -91,7 +103,7 @@ export default function Profile() {
               </div>
             </Card>
 
-            {/* Completion History */}
+            {/* Approved Completions */}
             <Card className="p-8">
               <h2 className="font-display font-bold text-2xl mb-6">Approved Completions</h2>
               
@@ -123,6 +135,45 @@ export default function Profile() {
                       </div>
                       <p className="font-display font-bold text-primary">
                         {record.demon?.points || 0}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Verified Levels */}
+            <Card className="p-8">
+              <h2 className="font-display font-bold text-2xl mb-6">Verified Levels</h2>
+              
+              {verifiedLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : verifiedLevels?.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No verified levels yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {verifiedLevels?.map((level) => (
+                    <div
+                      key={level.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover-elevate"
+                      data-testid={`verified-level-${level.id}`}
+                    >
+                      <div>
+                        <p className="font-medium" data-testid={`verified-name-${level.id}`}>
+                          #{level.position} {level.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {level.difficulty}
+                        </p>
+                      </div>
+                      <p className="font-display font-bold text-accent">
+                        {level.points} pts
                       </p>
                     </div>
                   ))}
