@@ -177,6 +177,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PROTECTED ROUTES (Auth required)
   // ============================================================================
 
+  // Get user's records
+  app.get("/api/records/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const records = await storage.getRecordsByUser(userId);
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching user records:", error);
+      res.status(500).json({ message: "Failed to fetch records" });
+    }
+  });
+
   // Submit a record
   app.post("/api/records", isAuthenticated, async (req: any, res) => {
     try {
