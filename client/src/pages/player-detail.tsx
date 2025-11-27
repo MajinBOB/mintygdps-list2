@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
@@ -5,10 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { CountryFlag, getCountryName } from "@/lib/countries";
 import { getInitials } from "@/lib/initials";
 import type { Demon } from "@shared/schema";
+
+const LIST_OPTIONS = [
+  { id: "", label: "All Lists" },
+  { id: "demonlist", label: "Demonlist" },
+  { id: "challenge", label: "Challenge List" },
+  { id: "unrated", label: "Unrated List" },
+  { id: "platformer", label: "Platformer List" },
+];
 
 type PlayerDetail = {
   user: {
@@ -31,13 +41,19 @@ export default function PlayerDetail() {
   
   // Extract listType from query string using window.location.search
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const listType = searchParams.get('listType') || undefined;
+  const initialListType = searchParams.get('listType') || undefined;
+  
+  // State for dropdown selection (only used when initialListType is undefined)
+  const [selectedListType, setSelectedListType] = useState<string>("");
+  
+  // Use initial listType if provided via URL, otherwise use selected dropdown value
+  const activeListType = initialListType || selectedListType || undefined;
 
   const { data: player, isLoading } = useQuery<PlayerDetail>({
-    queryKey: [`/api/players/${userId}`, listType],
+    queryKey: [`/api/players/${userId}`, activeListType],
     queryFn: async () => {
-      const url = listType 
-        ? `/api/players/${userId}?listType=${listType}`
+      const url = activeListType 
+        ? `/api/players/${userId}?listType=${activeListType}`
         : `/api/players/${userId}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch player details");
@@ -45,6 +61,10 @@ export default function PlayerDetail() {
     },
     enabled: !!userId,
   });
+
+  const handleListChange = (value: string) => {
+    setSelectedListType(value);
+  };
 
   if (isLoading) {
     return (
@@ -84,16 +104,31 @@ export default function PlayerDetail() {
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-between">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setLocation(listType ? `/leaderboard/${listType}` : "/leaderboard")}
+                onClick={() => setLocation(initialListType ? `/leaderboard/${initialListType}` : "/leaderboard")}
                 data-testid="button-back"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Leaderboard
               </Button>
+              
+              {!initialListType && (
+                <Select value={selectedListType} onValueChange={handleListChange}>
+                  <SelectTrigger className="w-48" data-testid="select-list-type">
+                    <SelectValue placeholder="Filter by list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LIST_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id} data-testid={`option-${option.id || 'all'}`}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Player Info */}
