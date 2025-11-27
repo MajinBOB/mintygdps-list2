@@ -201,6 +201,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's completed packs
+  app.get("/api/packs/user/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userPacks = await storage.getPacksByUser(userId);
+      res.json(userPacks);
+    } catch (error) {
+      console.error("Error fetching user packs:", error);
+      res.status(500).json({ message: "Failed to fetch packs" });
+    }
+  });
+
   // Submit a record
   app.post("/api/records", isAuthenticated, async (req: any, res) => {
     try {
