@@ -136,31 +136,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDemon(demonData: InsertDemon): Promise<Demon> {
-    // Check if a demon with this position already exists in the same list type
-    const existingAtPosition = await db
+    // Get all demons at this position or higher in the same list type, sorted by position desc
+    const demonsToShift = await db
       .select()
       .from(demons)
       .where(and(
-        eq(demons.position, demonData.position),
+        gte(demons.position, demonData.position),
         eq(demons.listType, demonData.listType)
-      ));
+      ))
+      .orderBy(desc(demons.position));
 
-    // If a demon exists at this position, shift all demons at this position and below down by 1
-    if (existingAtPosition.length > 0) {
+    // Shift each demon down by 1, starting from the highest position (to avoid conflicts)
+    for (const demon of demonsToShift) {
       await db
         .update(demons)
         .set({
-          position: sql`"position" + 1`,
+          position: demon.position + 1,
           updatedAt: new Date(),
         })
-        .where(and(
-          gte(demons.position, demonData.position),
-          eq(demons.listType, demonData.listType)
-        ));
+        .where(eq(demons.id, demon.id));
     }
 
-    const [demon] = await db.insert(demons).values(demonData).returning();
-    return demon;
+    const [newDemon] = await db.insert(demons).values(demonData).returning();
+    return newDemon;
   }
 
   async updateDemon(id: string, demonData: Partial<InsertDemon>): Promise<Demon> {
