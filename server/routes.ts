@@ -271,8 +271,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a demon (admin only)
-  app.post("/api/admin/demons", isAuthenticated, isAdmin, async (req, res) => {
+  // Create a demon (admin or moderator)
+  app.post("/api/admin/demons", isAuthenticated, isModerator, async (req, res) => {
     try {
       const validation = insertDemonSchema.safeParse(req.body);
       
@@ -299,8 +299,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a demon (admin only)
-  app.put("/api/admin/demons/:id", isAuthenticated, isAdmin, async (req, res) => {
+  // Update a demon (admin or moderator)
+  app.put("/api/admin/demons/:id", isAuthenticated, isModerator, async (req, res) => {
     try {
       const demonId = req.params.id;
       const validation = insertDemonSchema.safeParse(req.body);
@@ -331,8 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a demon (admin only)
-  app.delete("/api/admin/demons/:id", isAuthenticated, isAdmin, async (req, res) => {
+  // Delete a demon (admin or moderator)
+  app.delete("/api/admin/demons/:id", isAuthenticated, isModerator, async (req, res) => {
     try {
       const demonId = req.params.id;
       await storage.deleteDemon(demonId);
