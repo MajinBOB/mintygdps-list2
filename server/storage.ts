@@ -689,7 +689,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPacksByUser(userId: string, listType?: string): Promise<any[]> {
-    const allPacks = await db.select().from(packs).where(listType ? eq(packs.listType, listType) : undefined);
+    const query = db.select().from(packs);
+    const allPacks = listType 
+      ? await query.where(eq(packs.listType, listType))
+      : await query;
     
     return await Promise.all(
       allPacks.map(async (pack) => {
