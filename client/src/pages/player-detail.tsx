@@ -13,7 +13,7 @@ import { getInitials } from "@/lib/initials";
 import type { Demon } from "@shared/schema";
 
 const LIST_OPTIONS = [
-  { id: "", label: "All Lists" },
+  { id: "all", label: "All Lists" },
   { id: "demonlist", label: "Demonlist" },
   { id: "challenge", label: "Challenge List" },
   { id: "unrated", label: "Unrated List" },
@@ -44,10 +44,10 @@ export default function PlayerDetail() {
   const initialListType = searchParams.get('listType') || undefined;
   
   // State for dropdown selection (only used when initialListType is undefined)
-  const [selectedListType, setSelectedListType] = useState<string>("");
+  const [selectedListType, setSelectedListType] = useState<string>("all");
   
   // Use initial listType if provided via URL, otherwise use selected dropdown value
-  const activeListType = initialListType || selectedListType || undefined;
+  const activeListType = initialListType || (selectedListType !== "all" ? selectedListType : undefined);
 
   const { data: player, isLoading } = useQuery<PlayerDetail>({
     queryKey: [`/api/players/${userId}`, activeListType],
@@ -122,7 +122,7 @@ export default function PlayerDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {LIST_OPTIONS.map((option) => (
-                      <SelectItem key={option.id} value={option.id} data-testid={`option-${option.id || 'all'}`}>
+                      <SelectItem key={option.id} value={option.id} data-testid={`option-${option.id}`}>
                         {option.label}
                       </SelectItem>
                     ))}
