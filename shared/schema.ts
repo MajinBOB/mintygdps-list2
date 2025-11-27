@@ -12,6 +12,7 @@ import {
   jsonb,
   index,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -59,7 +60,7 @@ export const demons = pgTable("demons", {
   verifier: text("verifier"),
   verifierId: varchar("verifier_id").references(() => users.id, { onDelete: "set null" }), // Track which user verified it
   difficulty: varchar("difficulty", { length: 50 }).notNull(), // Easy, Medium, Hard, Insane, Extreme
-  position: integer("position").notNull().unique(),
+  position: integer("position").notNull(),
   points: integer("points").notNull(),
   videoUrl: text("video_url"),
   completionCount: integer("completion_count").notNull().default(0),
@@ -68,7 +69,9 @@ export const demons = pgTable("demons", {
   categories: text("categories").array().default(sql`ARRAY[]::text[]`),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("IDX_demons_position_listType").on(table.position, table.listType),
+]);
 
 export const insertDemonSchema = createInsertSchema(demons).omit({
   id: true,
