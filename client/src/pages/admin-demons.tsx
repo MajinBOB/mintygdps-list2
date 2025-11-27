@@ -255,10 +255,21 @@ export default function AdminDemons() {
     setIsDialogOpen(true);
   };
 
+  const calculatePoints = (position: number, listType: string): number => {
+    // Calculate points based on position: 300 at position 1, decreasing linearly
+    const maxPosition = listType === "challenge" ? 100 : 200;
+    if (position < 1 || position > maxPosition) {
+      return 0;
+    }
+    return Math.max(1, Math.round(300 - (position - 1) * (299 / (maxPosition - 1))));
+  };
+
   const handleSubmit = (data: z.infer<typeof insertDemonSchema>) => {
+    const calculatedPoints = calculatePoints(data.position, selectedListType);
     const dataWithListType = {
       ...data,
       listType: selectedListType as any,
+      points: calculatedPoints,
     };
     if (editingDemon) {
       updateMutation.mutate({ id: editingDemon.id, data: dataWithListType });
@@ -401,7 +412,7 @@ export default function AdminDemons() {
                           )}
                         />
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
                             name="difficulty"
@@ -438,24 +449,6 @@ export default function AdminDemons() {
                                     {...field}
                                     onChange={e => field.onChange(parseInt(e.target.value))}
                                     data-testid="input-demon-position"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="points"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Points</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    onChange={e => field.onChange(parseInt(e.target.value))}
-                                    data-testid="input-demon-points"
                                   />
                                 </FormControl>
                                 <FormMessage />
