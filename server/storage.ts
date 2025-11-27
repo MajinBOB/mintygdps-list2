@@ -278,6 +278,7 @@ export class DatabaseStorage implements IStorage {
           position: demons.position,
           difficulty: demons.difficulty,
           points: demons.points,
+          listType: demons.listType,
         },
       })
       .from(records)
@@ -294,6 +295,7 @@ export class DatabaseStorage implements IStorage {
         position: demons.position,
         difficulty: demons.difficulty,
         points: demons.points,
+        listType: demons.listType,
       })
       .from(demons)
       .where(eq(demons.verifierId, userId))

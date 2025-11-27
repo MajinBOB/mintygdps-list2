@@ -13,7 +13,6 @@ const LIST_NAMES: Record<string, string> = {
   demonlist: "Demonlist",
   challenge: "Challenge List",
   unrated: "Unrated List",
-  upcoming: "Upcoming List",
   platformer: "Platformer List",
 };
 
