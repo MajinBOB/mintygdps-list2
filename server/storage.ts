@@ -15,7 +15,7 @@ import {
   type InsertPack,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, sql, and } from "drizzle-orm";
+import { eq, desc, asc, sql, and, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -150,11 +150,11 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(demons)
         .set({
-          position: sql`${demons.position} + 1`,
+          position: sql`"position" + 1`,
           updatedAt: new Date(),
         })
         .where(and(
-          sql`${demons.position} >= ${demonData.position}`,
+          gte(demons.position, demonData.position),
           eq(demons.listType, demonData.listType)
         ));
     }
