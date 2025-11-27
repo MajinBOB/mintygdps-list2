@@ -27,10 +27,10 @@ type PlayerDetail = {
 
 export default function PlayerDetail() {
   const { userId } = useParams<{ userId: string }>();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   
-  // Extract listType from query string
-  const searchParams = new URLSearchParams(location.split('?')[1]);
+  // Extract listType from query string using window.location.search
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const listType = searchParams.get('listType') || undefined;
 
   const { data: player, isLoading } = useQuery<PlayerDetail>({
