@@ -77,9 +77,12 @@ export default function Profile() {
   const initials = getInitials(user);
   const approvedRecords = records?.filter(r => r.status === "approved" && r.demon?.listType === selectedListType) || [];
   const verifiedInList = verifiedLevels?.filter(l => l.listType === selectedListType) || [];
-  const allCompletions = approvedRecords.length + verifiedInList.length;
-  const totalCompletionPoints = approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0) + verifiedInList.reduce((sum, l) => sum + (l.points || 0), 0);
   const completedPacks = userPacks?.filter(p => p.isCompleted && p.listType === selectedListType) || [];
+  
+  const allCompletions = approvedRecords.length + verifiedInList.length;
+  const completionPoints = approvedRecords.reduce((sum, r) => sum + (r.demon?.points || 0), 0) + verifiedInList.reduce((sum, l) => sum + (l.points || 0), 0);
+  const packBonusPoints = completedPacks.reduce((sum, p) => sum + (p.points || 0), 0);
+  const totalCompletionPoints = completionPoints + packBonusPoints;
 
   return (
     <div className="min-h-screen flex flex-col">

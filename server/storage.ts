@@ -462,10 +462,10 @@ export class DatabaseStorage implements IStorage {
       const verifierPoints = Number(verifierResult[0]?.verifierPoints) || 0;
       const verifiedCount = Number(verifierResult[0]?.verifiedCount) || 0;
 
-      // Calculate pack completion bonus points
+      // Calculate pack completion bonus points (filtered by listType if specified)
       let packBonusPoints = 0;
       try {
-        const userPacks = await this.getPacksByUser(user.id);
+        const userPacks = await this.getPacksByUser(user.id, listType);
         const completedPacks = userPacks.filter(p => p.isCompleted);
         packBonusPoints = completedPacks.reduce((sum, pack) => sum + pack.points, 0);
       } catch (error) {
@@ -684,8 +684,8 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(packLevels.packId, packId), eq(packLevels.demonId, demonId)));
   }
 
-  async getPacksByUser(userId: string): Promise<any[]> {
-    const allPacks = await db.select().from(packs);
+  async getPacksByUser(userId: string, listType?: string): Promise<any[]> {
+    const allPacks = await db.select().from(packs).where(listType ? eq(packs.listType, listType) : undefined);
     
     return await Promise.all(
       allPacks.map(async (pack) => {
