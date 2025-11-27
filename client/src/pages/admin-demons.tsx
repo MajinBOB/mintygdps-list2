@@ -87,7 +87,7 @@ function DraggableDemonCard({ demon, onEdit, onDelete }: {
 }
 
 export default function AdminDemons() {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin, isModerator } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDemon, setEditingDemon] = useState<Demon | null>(null);
@@ -96,17 +96,17 @@ export default function AdminDemons() {
   const [isReordering, setIsReordering] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+    if (!isLoading && (!isAuthenticated || (!isAdmin && !isModerator))) {
       toast({
         title: "Unauthorized",
-        description: "You must be an admin to access this page.",
+        description: "You must be an admin or moderator to access this page.",
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/demonlist";
       }, 500);
     }
-  }, [isAuthenticated, isLoading, isAdmin, toast]);
+  }, [isAuthenticated, isLoading, isAdmin, isModerator, toast]);
 
   const { data: allDemons, isLoading: demonsLoading } = useQuery<Demon[]>({
     queryKey: ["/api/demons"],
