@@ -256,10 +256,14 @@ export default function AdminDemons() {
   };
 
   const handleSubmit = (data: z.infer<typeof insertDemonSchema>) => {
+    const dataWithListType = {
+      ...data,
+      listType: selectedListType as any,
+    };
     if (editingDemon) {
-      updateMutation.mutate({ id: editingDemon.id, data });
+      updateMutation.mutate({ id: editingDemon.id, data: dataWithListType });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(dataWithListType);
     }
   };
 
@@ -338,6 +342,8 @@ export default function AdminDemons() {
                   if (!open) {
                     setEditingDemon(null);
                     form.reset();
+                  } else if (!editingDemon) {
+                    form.setValue("listType", selectedListType as any);
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -352,31 +358,6 @@ export default function AdminDemons() {
                     </DialogHeader>
                     <Form {...form}>
                       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="listType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>List Type</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-list-type">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="demonlist">Demonlist</SelectItem>
-                                  <SelectItem value="challenge">Challenge List</SelectItem>
-                                  <SelectItem value="unrated">Unrated List</SelectItem>
-                                  <SelectItem value="upcoming">Upcoming List</SelectItem>
-                                  <SelectItem value="platformer">Platformer List</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
