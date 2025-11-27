@@ -122,20 +122,20 @@ export default function Profile() {
                   
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="font-display font-bold text-2xl">
+                      <p className="font-display font-bold text-2xl" data-testid="stat-completions">
                         {allCompletions}
                       </p>
                       <p className="text-sm text-muted-foreground">Completions</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-display font-bold text-2xl">
+                      <p className="font-display font-bold text-2xl" data-testid="stat-points">
                         {totalCompletionPoints}
                       </p>
                       <p className="text-sm text-muted-foreground">Total Points</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-display font-bold text-2xl">
-                        {records?.filter(r => r.status === "pending").length || 0}
+                      <p className="font-display font-bold text-2xl" data-testid="stat-pending">
+                        {records?.filter(r => r.status === "pending" && r.demon?.listType === selectedListType).length || 0}
                       </p>
                       <p className="text-sm text-muted-foreground">Pending</p>
                     </div>
